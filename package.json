@@ -1,0 +1,23 @@
+{
+  "name": "chatpubnub",
+  "version": "1.0.0",
+  "description": "Pubnub practice",
+  "main": "app.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "es6": "0.0.7",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.9.24",
+    "postman-request": "^2.88.1-postman.23",
+    "pubnub": "^4.28.2",
+    "sendbird": "^3.0.128"
+  },
+  "devDependencies": {},
+  "type": "module"
+}
