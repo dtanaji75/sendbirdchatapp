@@ -9,12 +9,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "app-root-path": "^3.0.0",
     "body-parser": "^1.19.0",
+    "crypto": "^1.0.1",
     "es6": "0.0.7",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.9.24",
     "mysql": "^2.18.1",
+    "node-datetime": "^2.1.2",
     "postman-request": "^2.88.1-postman.23",
     "pubnub": "^4.28.2",
     "sendbird": "^3.0.128"

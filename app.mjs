@@ -46,14 +46,4 @@ let server=app.listen(8888,()=>{
         let port= server.address().port;
         console.log("Example app listening at http://%s:%s", host, port);
     });
-// import SendBird from "sendbird";
-
-// let sb=new SendBird({appId:"BD4FC23B-DA19-47EC-9FC3-D9E5AEF926F6"});
-
-// sb.connect("dtanaji75", function(user, error) {
-//     if (error) {
-//         return;
-//     }
-//     console.log("User connected successfully.");
-//     console.log(user);
-// });
+    
