@@ -306,4 +306,18 @@ userObj.validateToken=(data)=>{
         return {"status":"unsuccess","msg":"","error":"Problem in fetching user details. Please try again."};
     }
 }
+userObj.getUserByToken=(data)=>{
+    try
+    {
+        let response=userDBModel.find({$or:[{"login.username":data.username},{"login.username1":data.username}]});
+        return response.then((result)=>{
+            return {"status":"success","msg":result,"error":""};
+        })
+    }
+    catch (error) 
+    {
+        console.log(error);
+        return {"status":"unsuccess","msg":"","error":"Problem in getting user details."};
+    }
+}
 export let userdb=userObj;
