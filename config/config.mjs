@@ -8,4 +8,5 @@ export let config={
     encryption_key:"edb586b0cf329ed30ace437a1d47e881",
     algorithm:"aes-256-cbc",
     database_url:"mongodb://127.0.0.1:27017/admin",
+    sendBirdObj:{}
 }

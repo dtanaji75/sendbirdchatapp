@@ -1,10 +1,6 @@
 
-import SendBird from "sendbird";
-import {config} from "../../config/config.mjs";
-import {log} from "../../config/log.mjs";
 import {userdb} from "../../models/user_model.mjs";
-
-const sb=new SendBird({appId:config.appId});
+import {SendBirdAction} from "../../config/sendBirdAction.mjs";
 
 let userController={};
 
@@ -26,27 +22,29 @@ userController.registerUser=async (data)=>{
             }
         }
         let response = await userdb.addUser(userData);
-        console.log(response);
+        
         if(response.status=="unsucces")
             return response;
-        sb.connect(data.email,(user,error)=>{
-          if(error)
-            throw new Error(error);
-            sb.updateCurrentUserInfo(data.name, "", function(response, error) {
-            if (error) {
-                throw new Error(error);
-            }   
-            });
-        });
-        sb.connect(data.email,(user,error)=>{
-            if(error)
-                throw new Error(error);
-        sb.updateCurrentUserInfo(data.name, "", function(response, error) {
-                    if (error) {
-                        throw new Error(error);
-                    }   
-                });
-        });
+        let sendBird=new SendBirdAction();
+        await sendBird.connect(data.email,data.name);
+        sendBird.disconnect();
+        return response;
+    }
+    catch (error) 
+    {
+        let err=""+error;
+
+        return {"status":"unsuccess","msg":"","error":err.replace("Error: Error:","").trim()};
+    }
+}
+userController.userLogin=async (data)=>{
+    try 
+    {
+        let response = await userdb.getLogin(data);
+        if(response.status=="unsucces")
+            return response;
+
+        return response;
     }
     catch (error) 
     {
@@ -64,6 +62,17 @@ export let user=(request,response)=>{
         if(data.action=="userRegister")
         {
             let resp=userController.registerUser(data.data);
+
+            resp.then((result)=>{
+                response.json(result);
+            });
+            resp.catch((error)=>{
+                response.json({"status":"unsuccess","msg":"","error":error});
+            })
+        }
+        if(data.action=="userLogin")
+        {
+            let resp=userController.userLogin(data.data);
 
             resp.then((result)=>{
                 response.json(result);

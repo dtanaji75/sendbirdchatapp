@@ -19,6 +19,7 @@ const userSchema=new mongoose.Schema({
         "address":{type:String,require:true},
         "user_type":{type:String,default:"user"},
         "created_on":{type:Date ,default:dateTime.get(config.db_date_format)},
+        "is_online":{type:Boolean,default:false},
         "user_salt":{type:String,default:"N/A"}
     },
     "login":{
@@ -84,7 +85,7 @@ userSchema.pre('save',async function(next){
     }
     catch (error)
     {
-        console.log(error);
+        // console.log(error);
         throw new Error(error);
     }
 });
@@ -133,10 +134,18 @@ userObj.verifyUser=(data)=>{
             {
                 for(let i=0;i<result.length;i++)
                 {
-                    if(data.user.email==result[i].user.email)
+                    if(data.user.email==result[i].user.email && data.user.contact==result[i].user.contact)
+                    {
+                        return {"status":"unsuccess","msg":"","error":"Email id and contact number already exists."};
+                    }
+                    else if(data.user.email==result[i].user.email)
+                    {
                         return {"status":"unsuccess","msg":"","error":"Email id already exists."};
-                    if(data.user.contact==result[i].user.contact)
+                    }
+                    else if(data.user.contact==result[i].user.contact)
+                    {
                         return {"status":"unsuccess","msg":"","error":"Contact number already exists."};
+                    }
                 }
                 return {"status":"success","msg":"User verified successfully.","error":""};
             } catch (error) {
@@ -164,11 +173,56 @@ userObj.getUserDetails=(data)=>{
             {
                 if(result.length==0)
                     return {"status":"unsuccess","msg":"","error":"No record found."};
-                return {"status":"success","msg":result,"error":""};
+
+                let userData=[];
+                let keys=Object.keys(data);
+                
+                
+                for(let i=0;i<result.length;i++)
+                {
+                    let validFlag=true;
+                    let obj={
+                        "user_type":result[i].user.user_type,
+                        "status":result[i].user.is_online,
+                        "name":result[i].user.name,
+                        "email":result[i].user.email,
+                        "contactno":result[i].user.contact,
+                        "created_on":dateTime.convert(result[i].user.created_on),
+                        "username":result[i].login.username,
+                        "address":result[i].user.address,
+                        "last_login_details":dateTime.convert(result[i].login.user1_logged_in)
+                    }
+                    if(data.user_type=="stall")
+                    {
+                        obj.username1=result[i].login.username1,
+                        obj.user1_last_login_details=dateTime.convert(result[i].login.user2_logged_in);
+                        obj.stall_name=result[i].stall.name;
+                        obj.stall_location=result[i].stall.location
+                    }
+
+                    for(let i=2;i<keys.length;i++)
+                    {
+                        let current_value=obj[keys[i]];
+                        let user_value=data[keys[i]];
+
+                        
+                        current_value=current_value.toString();
+                        user_value=user_value.toString();
+
+                        if(current_value.indexOf(user_value)==-1)
+                        {
+                            validFlag=false;
+                            break;
+                        }
+                    }
+                    if(validFlag)
+                        userData.push(obj);
+                }
+                return {"status":"success","msg":userData,"error":""};
             }
             catch (error)
             {
-                log.error("Exception in userObj.getUserDetails inner function::"+error);
+                console.error(error);
                 return {"status":"unsuccess","msg":"","error":"Problem in fetching user details. Please try after sometime."};
             }
         });
@@ -179,5 +233,77 @@ userObj.getUserDetails=(data)=>{
         return {"status":"unsuccess","msg":"","error":"Problem in fetching user details. Please try again."};
     }
 }
-userObj.get
+userObj.getLogin=(data)=>{
+    try
+    {
+        let response=userDBModel.find({"user.user_type":data.user_type});
+        
+        return response.then(async(result)=>{
+            try
+            {
+                if(result.length==0)
+                    return {"status":"unsuccess","msg":"","error":"No record found."};
+                
+                let loginFlag=false;
+                let token="";
+                let userFlag=true;
+                for(let i=0;i<result.length;i++)
+                {
+                    let encryptedpassowrd=encrypt.passwordWithSaltString(data.password,result[i].user.user_salt);
+                    
+                    if(data.username==result[i].login.username && encryptedpassowrd==result[i].login.password)
+                    {
+                        loginFlag=true;
+                        userFlag=true;
+                        token=result[i].login.token1;
+                        break;
+                        
+                    }
+                    if(data.user_type=="stall" && data.username===result[i].login.username1 && encryptedpassowrd==result[i].login.password1)
+                    {
+                        loginFlag=true;
+                        userFlag=false;
+                        token=result[i].login.token2;
+                        break;
+                    }
+                }
+                if(loginFlag)
+                {
+                    let updateResult="";
+                    if(userFlag)
+                        updateResult=await userDBModel.updateOne({"login.token1":token},{$set:{"user.is_online":true,"login.user1_logged_in":dateTime.get(config.db_date_format)}});
+                    else
+                        updateResult=await userDBModel.updateOne({"login.token2":token},{$set:{"user.is_online":true,"login.user1_logged_in":dateTime.get(config.db_date_format)}});
+
+                    return {"status":"success","msg":"Login successfully done.","error":"","token":token};
+                }
+                return {"status":"unsuccess","msg":"","error":"Invalid username or password."};
+            }
+            catch (error)
+            {
+                console.error(error);
+                return {"status":"unsuccess","msg":"","error":"Problem in fetching user details. Please try after sometime."};
+            }
+        });
+    }
+    catch (error)
+    {
+        console.error(error);
+        return {"status":"unsuccess","msg":"","error":"Problem in fetching user details. Please try again."};
+    }
+}
+userObj.validateToken=(data)=>{
+    try 
+    {
+        let response=userDBModel.find({"login.username":data.username,"user.user_type":data.user_type});
+        return response.then((result)=>{
+            if(result[0].user.is_online)
+                return {"status":"success","msg":"Token validated successfully","error":""};
+            else
+                return {"status":"login","msg":"","error":"User logged out. Please login again"};
+        })
+    } catch (error) {
+        return {"status":"unsuccess","msg":"","error":"Problem in fetching user details. Please try again."};
+    }
+}
 export let userdb=userObj;

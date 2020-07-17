@@ -68,7 +68,7 @@ async function validateToken(data)
 	try
 	{
 		var token = jwt.verify(data, config.encryption_key);
-		const userResponse=await user.validateToken(token);
+		const userResponse=await userdb.validateToken(token);
 		if(!userResponse)
 		{
 			return {"status":"login","msg":"","error":"Invalid user details."};

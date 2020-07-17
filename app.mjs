@@ -1,13 +1,22 @@
-import express from "express";
 import url from "url";
 import bodyParser from "body-parser";
 import {router} from "./config/router.mjs";
+import express from "express";
 
 const route={};
 
 const app=express();
 
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "*");
+    next();
+  });
+  
 const urlEncodedParser=bodyParser.urlencoded({limit:'5mb',extended:false});
+
+
+
 
 app.get("/",(request,response)=>{
     try
