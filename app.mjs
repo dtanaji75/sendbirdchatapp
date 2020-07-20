@@ -48,7 +48,7 @@ app.post("/",urlEncodedParser,(request,response)=>{
 for(let i=0;i<router.length;i++)
 {
     route[router[i].model_name]=router[i].model;
-    app.get("/"+router[i].model_name,urlEncodedParser,(request,response)=>{
+    app.get("/"+router[i].model_name,(request,response)=>{
         let pathname=url.parse(request.url).pathname.toString().split("/")[1];
         route[pathname](request,response);
     });
