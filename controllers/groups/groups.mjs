@@ -1,6 +1,6 @@
 import profanity  from '@2toad/profanity';
 import badwords from 'bad-words';
-import {SendBirdAction} from "../../config/sendBirdAction.mjs";
+import {SendBirdAction} from "../../config/sendbirdAction.mjs";
 import {userdb} from "../../models/user_model.mjs";
 import {encrypt} from "../../helper/encryptdecrypt.mjs";
 import {dateTime} from "../../config/date.mjs";

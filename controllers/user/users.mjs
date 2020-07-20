@@ -1,6 +1,6 @@
 
 import {userdb} from "../../models/user_model.mjs";
-import {SendBirdAction} from "../../config/sendBirdAction.mjs";
+import {SendBirdAction} from "../../config/sendbirdAction.mjs";
 
 let userController={};
 
