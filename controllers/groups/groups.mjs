@@ -4,9 +4,142 @@ import {SendBirdAction} from "../../config/sendbirdAction.mjs";
 import {userdb} from "../../models/user_model.mjs";
 import {encrypt} from "../../helper/encryptdecrypt.mjs";
 import {dateTime} from "../../config/date.mjs";
+import { channeldb } from '../../models/channels_model.mjs';
 
 let chatObj={};
 
+chatObj.createNewGroup=async(data,tokenData)=>{
+    try
+    {
+        let userDetails=await userdb.getUserByToken(tokenData);
+        if(userDetails.status=="unsuccess")
+            return userDetails;
+        userDetails=userDetails.msg;
+
+        let sendBirdUser=new SendBirdAction();
+        
+        await sendBirdUser.connect(userDetails[0].user.email,userDetails.user.name);
+
+        let openChannel=await sendBirdUser.createOpenChannel(data.group_name);
+
+        await sendBirdUser.enter(openChannel.url);
+
+        sendBirdUser.disconnect();
+
+        return {"status":"success","msg":"Person added successfully.","error":""};
+    }
+    catch (error)
+    {
+        console.log(error);
+        return {"status":"unsuccess","msg":"","error":"Problem in sending message."};
+    }
+}
+chatObj.joinGroup=async(data,tokenData)=>{
+    try
+    {
+        let userDetails=await userdb.getUserByToken(tokenData);
+        if(userDetails.status=="unsuccess")
+            return userDetails;
+        
+        userDetails=userDetails.msg;
+
+        let sendBirdUser=new SendBirdAction();
+        
+        await sendBirdUser.connect(userDetails[0].login.username,userDetails[0].user.name);
+
+        let channelDetails=await chatObj.getChannelByName(data,tokenData);
+
+        if(channelDetails.status=="unsuccess")
+            return channelDetails;
+        
+        channelDetails=channelDetails.msg;
+
+        let channelData={
+            name:channelDetails.name,
+            isOpen:true,
+            channelUrl:channelDetails.url,
+            user:data.user,
+            username:userDetails[0].login.username
+        }
+
+        let addChannel=await channeldb.addChannel(channelData);
+
+        if(addChannel.status=="unsuccess")
+            return addChannel;
+
+        let channelData=await sendBirdUser.getChannel(channelDetails.url,true);
+
+        await channelData.enter((response,error)=>{
+            if(error)
+                throw new Error(error);
+        });
+
+        sendBirdUser.disconnect();
+
+        if(groupMessages.length==0)
+            return {"status":"unsccess","msg":"","error":"No messages found."};
+        
+        return {"status":"success","msg":userMessages,"error":""};
+    }
+    catch (error)
+    {
+        console.log(error);
+        return {"status":"unsuccess","msg":"","error":"Problem in fetching joined groups."};
+    }
+}
+chatObj.leaveGroup=async(data,tokenData)=>{
+    try
+    {
+        let userDetails=await userdb.getUserByToken(tokenData);
+        if(userDetails.status=="unsuccess")
+            return userDetails;
+        
+        userDetails=userDetails.msg;
+
+        let sendBirdUser=new SendBirdAction();
+        
+        await sendBirdUser.connect(userDetails[0].user.email,userDetails[0].user.name);
+
+        let channelDetails=await chatObj.getChannelByName(data,tokenData);
+
+        if(channelDetails.status=="unsuccess")
+            return channelDetails;
+        
+        channelDetails=channelDetails.msg;
+
+        let channelData={
+            name:channelDetails.name,
+            isOpen:true,
+            channelUrl:channelDetails.url,
+            user:data.user,
+            username:userDetails[0].login.username
+        }
+
+        let addChannel=await channeldb.addChannel(channelData);
+
+        if(addChannel.status=="unsuccess")
+            return addChannel;
+
+        let channelData=await sendBirdUser.getChannel(channelDetails.url,true);
+
+        await channelData.enter((response,error)=>{
+            if(error)
+                throw new Error(error);
+        });
+        
+        sendBirdUser.disconnect();
+
+        if(groupMessages.length==0)
+            return {"status":"unsccess","msg":"","error":"No messages found."};
+        
+        return {"status":"success","msg":userMessages,"error":""};
+    }
+    catch (error)
+    {
+        console.log(error);
+        return {"status":"unsuccess","msg":"","error":"Problem in fetching joined groups."};
+    }
+}
 chatObj.getUserList=async(data,tokenData)=>{
     try 
     {
@@ -34,38 +167,15 @@ chatObj.getUserList=async(data,tokenData)=>{
         return {"status":"unsuccess","msg":"","error":"Problem in fetching user list"};
     }
 }
-chatObj.sendUserMessage=async(data,tokenData)=>
-{
+chatObj.getAllOpenGroupDetails=async(tokenData)=>{
     try
     {
         let userDetails=await userdb.getUserByToken(tokenData);
         if(userDetails.status=="unsuccess")
             return userDetails;
-        userDetails=userDetails.msg;
-        let sendBirdUser=new SendBirdAction();
         
-        await sendBirdUser.connect(userDetails[0].user.email,userDetails.user.name);
-        let channelDetails=await sendBirdUser.getChannel(data.url,false);
-
-        let messageResult=await channelDetails.sendUserMessage(data.message,(message,error)=>{});
-
-        sendBirdUser.disconnect();
-
-        return {"status":"success","msg":"Message sent successfully.","error":""};
-    }
-    catch (error)
-    {
-        console.log(error);
-        return {"status":"unsuccess","msg":"","error":"Problem in sending message."};
-    }
-}
-chatObj.getUserMessage=async(tokenData)=>{
-    try
-    {
-        let userDetails=await userdb.getUserByToken(tokenData);
-        if(userDetails.status=="unsuccess")
-            return userDetails;
         userDetails=userDetails.msg;
+        
         let sendBirdUser=new SendBirdAction();
         
         await sendBirdUser.connect(userDetails[0].user.email,userDetails[0].user.name);
@@ -108,32 +218,6 @@ chatObj.getUserMessage=async(tokenData)=>{
         return {"status":"unsuccess","msg":"","error":"Problem in sending message."};
     }
 }
-chatObj.createNewGroup=async(data,tokenData)=>{
-    try
-    {
-        let userDetails=await userdb.getUserByToken(tokenData);
-        if(userDetails.status=="unsuccess")
-            return userDetails;
-        userDetails=userDetails.msg;
-
-        let sendBirdUser=new SendBirdAction();
-        
-        await sendBirdUser.connect(userDetails[0].user.email,userDetails.user.name);
-
-        let openChannel=await sendBirdUser.createOpenChannel(data.group_name);
-
-        await sendBirdUser.enter(openChannel.url);
-
-        sendBirdUser.disconnect();
-
-        return {"status":"success","msg":"Person added successfully.","error":""};
-    }
-    catch (error)
-    {
-        console.log(error);
-        return {"status":"unsuccess","msg":"","error":"Problem in sending message."};
-    }
-}
 chatObj.getChannelByName=async(data,tokenData)=>
 {
     try
@@ -152,14 +236,11 @@ chatObj.getChannelByName=async(data,tokenData)=>
 
         let channelObj={};
         let channelFlag=false;
-        console.log("User given name"+data.user);
+        
         for(let i=0;i<openChannelDetails.length;i++)
         {
             channelObj=openChannelDetails[i];
             
-            // groupMessages.push({"channelUrl":channelObj.url,"group_name":c,"group_created_on":dateTime.convert(channelObj.createdAt),"group_messages":grpMsg,"members":paticipantObj});
-
-            console.log("Channel Name:"+channelObj.name);
             if(channelObj.name==data.user)
             {
                 channelFlag=true;
@@ -167,10 +248,34 @@ chatObj.getChannelByName=async(data,tokenData)=>
             }
 
         }
-        sendBirdUser.disconnect();
+        
 
         if(channelFlag)
-            return {"status":"success","msg":channelObj,"error":""};
+        {
+            let paticipantObj=await sendBirdUser.getParticipantList(channelObj.url);
+            
+            let userMsg=await sendBirdUser.getMessageList(channelObj,true);
+            
+            let grpMsg=[];
+            for(let j=0;j<userMsg.length;j++)
+            { 
+                
+                let message={
+                    "messageId":userMsg[j].messageId,
+                    "message":userMsg[j].message,
+                    "message_date_time":dateTime.convert(userMsg[j].createdAt),
+                    "sender_id":userMsg[j]._sender.userId,
+                    "sender_name":userMsg[j]._sender.nickname,
+                    "send_status":userMsg[j].sendingStatus
+                }
+                grpMsg.push(message);
+            }
+
+            sendBirdUser.disconnect();
+
+            return {"status":"success","msg":{"channelUrl":channelObj.url,"group_name":channelObj.name,"group_created_on":dateTime.convert(channelObj.createdAt),"group_messages":grpMsg,"members":paticipantObj},"error":""};
+        }
+            
         else
             return {"status":"unsuccess","msg":"","error":"Group details not found."};
     }

@@ -102,7 +102,7 @@ chatObj.sendUserMessage=async(data,tokenData)=>
             if(addChannel.status=="unsuccess")
                 return addChannel;
         }
-        console.log(channelinfo.msg.channelUrl);
+        
         let channelDetails = await sendBirdUser.getChannel(channelinfo.msg.channelUrl,false);
 
         // console.log(channelDetails);
@@ -139,21 +139,18 @@ chatObj.getUserMessage=async(tokenData)=>{
         await sendBirdUser.connect(userDetails[0].login.username,userDetails[0].user.name);
         let groupChannelDetails=await channeldb.getUserChannels({username:userDetails[0].login.username});
 
-        // console.log(groupChannelDetails);
+        if(groupChannelDetails.status=="unsuccess")
+            return groupChannelDetails;
 
         groupChannelDetails=groupChannelDetails.msg;
-        
-        // console.log(groupChannelDetails);
+
         let userMessages=[];
         for(let i=0;i<groupChannelDetails.length;i++)
         {
             if(groupChannelDetails[i].isOpen)
                 continue;
-            
-            // console.log(groupChannelDetails[i].channelUrl);
 
             let channelObj=await sendBirdUser.getChannel(groupChannelDetails[i].channelUrl,false);
-            
             
             let userMsg=await sendBirdUser.getMessageList(channelObj,true);
             
@@ -181,6 +178,8 @@ chatObj.getUserMessage=async(tokenData)=>{
 
         sendBirdUser.disconnect();
 
+        if(userMessages.length==0)
+            return {"status":"unsccess","msg":"","error":"No messages found."};
         return {"status":"success","msg":userMessages,"error":""};
     }
     catch (error)
@@ -233,6 +232,67 @@ chatObj.getChannelByName=async(data,tokenData)=>
     {
         console.log(error);
         return {"status":"unsuccess","msg":"","error":"Problem in fetching group details."};
+    }
+}
+chatObj.getGroupMessage=async(tokenData)=>{
+    try
+    {
+        let userDetails=await userdb.getUserByToken(tokenData);
+        if(userDetails.status=="unsuccess")
+            return userDetails;
+        
+        userDetails=userDetails.msg;
+        
+        let sendBirdUser=new SendBirdAction();
+        
+        await sendBirdUser.connect(userDetails[0].login.username,userDetails[0].user.name);
+                
+        let groupMessages=[];
+        let openChannelDetails=await channeldb.getUserChannels({"username":userDetails[0].login.username});
+
+        if(openChannelDetails.status=="unsuccess")
+            return {"status":"unsuccess","msg":"","error":"No groups found"};
+
+        openChannelDetails=openChannelDetails.msg;
+
+        for(let i=0;i<openChannelDetails.length;i++)
+        {
+            if(!openChannelDetails[i].isOpen)
+                continue;
+            
+            let channelObj=sendBirdUser.getChannel(openChannelDetails[i].channelUrl);
+
+            let paticipantObj=await sendBirdUser.getParticipantList(channelObj.url);
+            
+            let userMsg=await sendBirdUser.getMessageList(channelObj,true);
+            
+            let grpMsg=[];
+            for(let j=0;j<userMsg.length;j++)
+            { 
+                
+                let message={
+                    "messageId":userMsg[j].messageId,
+                    "message":userMsg[j].message,
+                    "message_date_time":dateTime.convert(userMsg[j].createdAt),
+                    "sender_id":userMsg[j]._sender.userId,
+                    "sender_name":userMsg[j]._sender.nickname,
+                    "send_status":userMsg[j].sendingStatus
+                }
+                grpMsg.push(message);
+            }
+            groupMessages.push({"channelUrl":channelObj.url,"group_name":channelObj.name,"group_created_on":dateTime.convert(channelObj.createdAt),"group_messages":grpMsg,"members":paticipantObj});
+        }
+
+        sendBirdUser.disconnect();
+
+        if(groupMessages.length==0)
+            return {"status":"unsccess","msg":"","error":"No messages found."};
+        return {"status":"success","msg":groupMessages,"error":""};
+    }
+    catch (error)
+    {
+        console.log(error);
+        return {"status":"unsuccess","msg":"","error":"Problem in sending message."};
     }
 }
 export {
@@ -334,7 +394,7 @@ export let chat=(request,response)=>{
                     response.json({"status":"unsuccess","msg":"","error":"Your message contains abusive words ("+msg+") remove it and send it again."});
                     return;
                 }
-                
+
                 let resp=chatObj.sendUserMessage(data.data,result.msg);
                 
                 resp.then((result)=>{

@@ -156,19 +156,13 @@ userObj.getUserDetails=(data)=>{
                         "user_type":result[i].user.user_type,
                         "status":result[i].user.is_online,
                         "name":result[i].user.name,
+                        "nickname":result[i].user.nickname,
                         "email":result[i].user.email,
                         "contactno":result[i].user.contact,
                         "created_on":dateTime.convert(result[i].user.created_on),
                         "username":result[i].login.username,
                         "address":result[i].user.address,
                         "last_login_details":dateTime.convert(result[i].login.user1_logged_in)
-                    }
-                    if(data.user_type=="stall")
-                    {
-                        obj.username1=result[i].login.username1,
-                        obj.user1_last_login_details=dateTime.convert(result[i].login.user2_logged_in);
-                        obj.stall_name=result[i].stall.name;
-                        obj.stall_location=result[i].stall.location
                     }
 
                     for(let i=2;i<keys.length;i++)
