@@ -287,8 +287,7 @@ export let groups=(request,response)=>{
     try 
     {
         
-        let data=request.body.data;
-        data=eval('('+data+")");
+        let data=request.body;
 
         if(data.action=="createNewGroup")
         {
