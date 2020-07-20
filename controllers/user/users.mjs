@@ -169,13 +169,13 @@ userController.logOut=async(data,tokenData)=>{
 export let user=(request,response)=>{
     try 
     {
-        let data=request.body.data;
+        let data=request.body;
         // if(request.method=="GET")
         //     data=request.data
         // else
         //     data=request.body.data
         console.log(data);
-        data=eval('('+data+")");
+        
 
         if(data.action=="userRegister")
         {
@@ -236,7 +236,7 @@ export let user=(request,response)=>{
              response.json({"status":"unsuccess","msg":"","error":data.action+" is not present."});
         }
     } catch (error) {
-        // console.log(error);
+        console.log(error);
         response.json({"status":"unsuccess","msg":"","error":""+error});
     }
 }
