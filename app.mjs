@@ -66,10 +66,9 @@ io.on("connection",(socket)=>{
             io.emit("sendMessage",{result});
             return;
         }
-
         data=eval('('+data+')');
         const response=await chatObj.sendUserMessage(data,result.msg);
-        io.emit("sendMessage",{response});
+        io.emit("sendMessage",response);
       });
     socket.on("getMessage",async(token)=>{
         try
