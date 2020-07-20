@@ -14,6 +14,7 @@ userController.registerUser=async (data)=>{
                 "email":data.email,
                 "contact":data.contact,
                 "address":data.address,
+                "nickname":data.nickname,
                 "user_type":"user",
             },
             "login":{
