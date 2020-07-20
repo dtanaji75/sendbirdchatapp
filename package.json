@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@2toad/profanity": "^1.1.0",
     "@std/esm": "^0.26.0",
     "app-root-path": "^3.0.0",
     "bad-words": "^3.0.3",
@@ -23,7 +24,8 @@
     "node-datetime": "^2.1.2",
     "postman-request": "^2.88.1-postman.23",
     "pubnub": "^4.28.2",
-    "sendbird": "^3.0.128"
+    "sendbird": "^3.0.128",
+    "socket.io": "^2.3.0"
   },
   "devDependencies": {},
   "type": "module"

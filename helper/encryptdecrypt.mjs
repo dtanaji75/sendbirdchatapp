@@ -67,17 +67,17 @@ async function validateToken(data)
 {
 	try
 	{
-		var token = jwt.verify(data, config.encryption_key);
+		var token = jwt.verify(data,config.encryption_key);
 		const userResponse=await userdb.validateToken(token);
-		if(!userResponse)
+		if(userResponse.status=="unsuccess")
 		{
-			return {"status":"login","msg":"","error":"Invalid user details."};
+			return {"status":"unsuccess","msg":"","error":"Invalid user details."};
 		}
 		return {"status":"success","msg":token,"error":""};
 	}
 	catch(e)
 	{
-		
+		console.log(e);
 		return {"status":"unsuccess","msg":"","error":e.message};
 	}
 }
