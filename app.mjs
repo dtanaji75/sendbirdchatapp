@@ -8,6 +8,7 @@ import {chatObj} from "./controllers/chat/chat.mjs";
 import {encrypt} from "./helper/encryptdecrypt.mjs";
 
 
+const port =process.env.PORT||8888;
 
 const route={};
 
@@ -87,7 +88,7 @@ io.on("connection",(socket)=>{
     //     socket.broadcast.emit("getMessage",response);
     // });
 });
-server.listen(config.PORT,()=>{
+server.listen(port,()=>{
         let host = server.address().address=="::"?"localhost":server.address().address;
         let port= server.address().port;
         console.log("Example app listening at http://%s:%s", host, port);
