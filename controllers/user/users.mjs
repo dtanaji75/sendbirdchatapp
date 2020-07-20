@@ -89,7 +89,11 @@ export let user=(request,response)=>{
     try 
     {
         let data=request.body.data;
-        console.log(request.body.data);
+        if(request.method=="GET")
+            data=request.data
+        else
+            data=request.body.data
+        // console.log(request.body.data);
         data=eval('('+data+")");
 
         if(data.action=="userRegister")
