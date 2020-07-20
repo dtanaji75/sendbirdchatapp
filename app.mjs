@@ -72,12 +72,19 @@ io.on("connection",(socket)=>{
         io.emit("sendMessage",{response});
       });
     socket.on("getMessage",async(token)=>{
-        const result=await encrypt.verifyToken(token);
-        if(result.status=="unsuccess")
-            socket.broadcast.emit(response);
-        data=eval('('+data+')');
-        const response=await chatObj.getUserMessage(result.msg);
-        socket.emit("getMessage",response);
+        try
+        {
+            const result=await encrypt.verifyToken(token);
+            if(result.status=="unsuccess")
+                socket.broadcast.emit(response);
+        
+            const response=await chatObj.getUserMessage(result.msg);
+            socket.emit("getMessage",response);   
+        } 
+        catch (error) {
+            socket.emit("getMessage",{"status":"unsuccess","msg":"","error":""+error});
+        }
+        
     });
 });
 server.listen(port,()=>{
