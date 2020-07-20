@@ -69,24 +69,16 @@ io.on("connection",(socket)=>{
 
         data=eval('('+data+')');
         const response=await chatObj.sendUserMessage(data,result.msg);
-        if(response.status=="success")
-        {
-            const getresponse=await chatObj.getUserMessage(result.msg);
-            io.emit("sendMessage",{getresponse});
-        }
-        else
-        {
-            io.emit("sendMessage",{response});
-        }
+        io.emit("sendMessage",{response});
       });
-    // socket.on("getMessage",async(data,token)=>{
-    //     const result=await encrypt.verifyToken(token);
-    //     if(result.status=="unsuccess")
-    //         socket.broadcast.emit(response);
-    //     data=eval('('+data+')');
-    //     const response=await chatObj.getUserMessage(result.msg);
-    //     socket.broadcast.emit("getMessage",response);
-    // });
+    socket.on("getMessage",async(token)=>{
+        const result=await encrypt.verifyToken(token);
+        if(result.status=="unsuccess")
+            socket.broadcast.emit(response);
+        data=eval('('+data+')');
+        const response=await chatObj.getUserMessage(result.msg);
+        socket.emit("getMessage",response);
+    });
 });
 server.listen(port,()=>{
         let host = server.address().address=="::"?"localhost":server.address().address;
