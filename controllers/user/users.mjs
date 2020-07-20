@@ -93,7 +93,7 @@ export let user=(request,response)=>{
         //     data=request.data
         // else
         //     data=request.body.data
-        console.log(typeof data);
+        console.log(data);
         data=eval('('+data+")");
 
         if(data.action=="userRegister")
