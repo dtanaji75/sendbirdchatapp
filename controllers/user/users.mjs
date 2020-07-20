@@ -82,7 +82,88 @@ userController.userProfile=async(data,tokenData)=>{
         return response;
     } catch (error) {
         console.log(error);
-        return {"status":"unsuccess","msg":"","error":"Problem in fetching user list"};
+        return {"status":"unsuccess","msg":"","error":"Problem in fetching user profile"};
+    }
+}
+userController.blockUser=async(data,tokenData)=>{
+    try
+    {
+        let userDetails=await userdb.getUserByToken(tokenData);
+        if(userDetails.status=="unsuccess")
+            return userDetails;
+        
+        userDetails=userDetails.msg;
+
+        let sendBirdUser=new SendBirdAction();
+        
+        await sendBirdUser.connect(userDetails[0].login.username,userDetails[0].user.name);
+        
+        await sendBirdUser.blockUser(data.user,true);
+
+        await sendBirdUser.disconnect();
+
+        return {"status":"success","msg":"User blocked successfully.","error":""};
+    }
+    catch (error)
+    {
+        return {"status":"unsuccess","msg":"","error":"Problem in blocking user."};
+    }
+}
+userController.unBlockUser=async(data,tokenData)=>{
+    try
+    {
+        let userDetails=await userdb.getUserByToken(tokenData);
+        if(userDetails.status=="unsuccess")
+            return userDetails;
+        
+        userDetails=userDetails.msg;
+
+        let sendBirdUser=new SendBirdAction();
+        
+        await sendBirdUser.connect(userDetails[0].login.username,userDetails[0].user.name);
+        
+        await sendBirdUser.blockUser(data.user,false);
+
+        await sendBirdUser.disconnect();
+
+        return {"status":"success","msg":"User blocked successfully.","error":""};
+    }
+    catch (error)
+    {
+        return {"status":"unsuccess","msg":"","error":"Problem in unblocking user."};
+    }
+}
+userController.getBlockedUserList=async(tokenData)=>{
+    try
+    {
+        let userDetails=await userdb.getUserByToken(tokenData);
+        if(userDetails.status=="unsuccess")
+            return userDetails;
+        
+        userDetails=userDetails.msg;
+
+        let sendBirdUser=new SendBirdAction();
+        
+        await sendBirdUser.connect(userDetails[0].login.username,userDetails[0].user.name);
+        
+        let blockedUser=await sendBirdUser.getBlockedList(data.user,false);
+
+        await sendBirdUser.disconnect();
+
+        if(blockedUser.length==0)
+            return {"status":"success","msg":"No user blocked by you.","error":""};    
+        return {"status":"success","msg":blockedUser,"error":""};
+    }
+    catch (error)
+    {
+        return {"status":"unsuccess","msg":"","error":"Problem in fetching blocked users."};
+    }
+}
+userController.logOut=async(data,tokenData)=>{
+    try {
+        
+    } catch (error) {
+        return {"status":"unsuccess","msg":"","error":"Problem in blocking user."};
     }
 }
 export let user=(request,response)=>{
@@ -107,7 +188,7 @@ export let user=(request,response)=>{
                 response.json({"status":"unsuccess","msg":"","error":error});
             })
         }
-        else if(data.action=="userLogin")
+        else if(data.action=="userlogin")
         {
             let resp=userController.userLogin(data.data);
 

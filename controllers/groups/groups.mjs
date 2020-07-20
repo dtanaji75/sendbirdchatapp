@@ -1,14 +1,12 @@
-import profanity  from '@2toad/profanity';
-import badwords from 'bad-words';
 import {SendBirdAction} from "../../config/sendbirdAction.mjs";
 import {userdb} from "../../models/user_model.mjs";
 import {encrypt} from "../../helper/encryptdecrypt.mjs";
 import {dateTime} from "../../config/date.mjs";
 import { channeldb } from '../../models/channels_model.mjs';
 
-let chatObj={};
+let groupObj={};
 
-chatObj.createNewGroup=async(data,tokenData)=>{
+groupObj.createNewGroup=async(data,tokenData)=>{
     try
     {
         let userDetails=await userdb.getUserByToken(tokenData);
@@ -18,15 +16,28 @@ chatObj.createNewGroup=async(data,tokenData)=>{
 
         let sendBirdUser=new SendBirdAction();
         
-        await sendBirdUser.connect(userDetails[0].user.email,userDetails.user.name);
+        await sendBirdUser.connect(userDetails[0].login.username,userDetails[0].user.name);
 
         let openChannel=await sendBirdUser.createOpenChannel(data.group_name);
 
         await sendBirdUser.enter(openChannel.url);
 
+        let channelData={
+            name:openChannel.name,
+            isOpen:true,
+            channelUrl:openChannel.url,
+            user:userDetails[0].login.username,
+            username:userDetails[0].login.username
+        }
+
+        let addChannel=await channeldb.addChannel(channelData);
+
+        if(addChannel.status=="unsuccess")
+            return addChannel;
+
         sendBirdUser.disconnect();
 
-        return {"status":"success","msg":"Person added successfully.","error":""};
+        return {"status":"success","msg":"Group created successfully.","error":""};
     }
     catch (error)
     {
@@ -34,7 +45,7 @@ chatObj.createNewGroup=async(data,tokenData)=>{
         return {"status":"unsuccess","msg":"","error":"Problem in sending message."};
     }
 }
-chatObj.joinGroup=async(data,tokenData)=>{
+groupObj.joinGroup=async(data,tokenData)=>{
     try
     {
         let userDetails=await userdb.getUserByToken(tokenData);
@@ -47,7 +58,7 @@ chatObj.joinGroup=async(data,tokenData)=>{
         
         await sendBirdUser.connect(userDetails[0].login.username,userDetails[0].user.name);
 
-        let channelDetails=await chatObj.getChannelByName(data,tokenData);
+        let channelDetails=await groupObj.getChannelByName(data,tokenData);
 
         if(channelDetails.status=="unsuccess")
             return channelDetails;
@@ -58,7 +69,7 @@ chatObj.joinGroup=async(data,tokenData)=>{
             name:channelDetails.name,
             isOpen:true,
             channelUrl:channelDetails.url,
-            user:data.user,
+            user:userDetails[0].login.username,
             username:userDetails[0].login.username
         }
 
@@ -67,7 +78,7 @@ chatObj.joinGroup=async(data,tokenData)=>{
         if(addChannel.status=="unsuccess")
             return addChannel;
 
-        let channelData=await sendBirdUser.getChannel(channelDetails.url,true);
+        channelData=await sendBirdUser.getChannel(channelDetails.url,true);
 
         await channelData.enter((response,error)=>{
             if(error)
@@ -75,11 +86,8 @@ chatObj.joinGroup=async(data,tokenData)=>{
         });
 
         sendBirdUser.disconnect();
-
-        if(groupMessages.length==0)
-            return {"status":"unsccess","msg":"","error":"No messages found."};
         
-        return {"status":"success","msg":userMessages,"error":""};
+        return {"status":"success","msg":userDetails[0].user.name+" joined this group","error":""};
     }
     catch (error)
     {
@@ -87,7 +95,7 @@ chatObj.joinGroup=async(data,tokenData)=>{
         return {"status":"unsuccess","msg":"","error":"Problem in fetching joined groups."};
     }
 }
-chatObj.leaveGroup=async(data,tokenData)=>{
+groupObj.leaveGroup=async(data,tokenData)=>{
     try
     {
         let userDetails=await userdb.getUserByToken(tokenData);
@@ -98,9 +106,9 @@ chatObj.leaveGroup=async(data,tokenData)=>{
 
         let sendBirdUser=new SendBirdAction();
         
-        await sendBirdUser.connect(userDetails[0].user.email,userDetails[0].user.name);
+        await sendBirdUser.connect(userDetails[0].login.username,userDetails[0].user.name);
 
-        let channelDetails=await chatObj.getChannelByName(data,tokenData);
+        let channelDetails=await groupObj.getChannelByName(data,tokenData);
 
         if(channelDetails.status=="unsuccess")
             return channelDetails;
@@ -108,31 +116,25 @@ chatObj.leaveGroup=async(data,tokenData)=>{
         channelDetails=channelDetails.msg;
 
         let channelData={
-            name:channelDetails.name,
-            isOpen:true,
             channelUrl:channelDetails.url,
-            user:data.user,
             username:userDetails[0].login.username
         }
 
-        let addChannel=await channeldb.addChannel(channelData);
+        let removeChannel=await channeldb.addChannel(channelData);
 
-        if(addChannel.status=="unsuccess")
+        if(removeChannel.status=="unsuccess")
             return addChannel;
 
-        let channelData=await sendBirdUser.getChannel(channelDetails.url,true);
+        channelData=await sendBirdUser.getChannel(channelDetails.url,true);
 
-        await channelData.enter((response,error)=>{
+        await channelData.exit((response,error)=>{
             if(error)
                 throw new Error(error);
         });
         
         sendBirdUser.disconnect();
 
-        if(groupMessages.length==0)
-            return {"status":"unsccess","msg":"","error":"No messages found."};
-        
-        return {"status":"success","msg":userMessages,"error":""};
+        return {"status":"success","msg":userDetails[0].user.name+" left this group","error":""};
     }
     catch (error)
     {
@@ -140,7 +142,7 @@ chatObj.leaveGroup=async(data,tokenData)=>{
         return {"status":"unsuccess","msg":"","error":"Problem in fetching joined groups."};
     }
 }
-chatObj.getUserList=async(data,tokenData)=>{
+groupObj.getUserList=async(data,tokenData)=>{
     try 
     {
         let userData={
@@ -167,7 +169,7 @@ chatObj.getUserList=async(data,tokenData)=>{
         return {"status":"unsuccess","msg":"","error":"Problem in fetching user list"};
     }
 }
-chatObj.getAllOpenGroupDetails=async(tokenData)=>{
+groupObj.getAllOpenGroupDetails=async(tokenData)=>{
     try
     {
         let userDetails=await userdb.getUserByToken(tokenData);
@@ -210,15 +212,15 @@ chatObj.getAllOpenGroupDetails=async(tokenData)=>{
 
         sendBirdUser.disconnect();
 
-        return {"status":"success","msg":{"userMessages":userMessages,"groupMessages":groupMessages},"error":""};
+        return {"status":"success","msg":groupMessages,"error":""};
     }
     catch (error)
     {
         console.log(error);
-        return {"status":"unsuccess","msg":"","error":"Problem in sending message."};
+        return {"status":"unsuccess","msg":"","error":"Problem in fetching group details."};
     }
 }
-chatObj.getChannelByName=async(data,tokenData)=>
+groupObj.getChannelByName=async(data,tokenData)=>
 {
     try
     {
@@ -241,15 +243,13 @@ chatObj.getChannelByName=async(data,tokenData)=>
         {
             channelObj=openChannelDetails[i];
             
-            if(channelObj.name==data.user)
+            if(channelObj.name==data.group_name)
             {
                 channelFlag=true;
                 break;
             }
 
         }
-        
-
         if(channelFlag)
         {
             let paticipantObj=await sendBirdUser.getParticipantList(channelObj.url);
@@ -272,12 +272,10 @@ chatObj.getChannelByName=async(data,tokenData)=>
             }
 
             sendBirdUser.disconnect();
-
             return {"status":"success","msg":{"channelUrl":channelObj.url,"group_name":channelObj.name,"group_created_on":dateTime.convert(channelObj.createdAt),"group_messages":grpMsg,"members":paticipantObj},"error":""};
-        }
-            
-        else
-            return {"status":"unsuccess","msg":"","error":"Group details not found."};
+        }   
+        sendBirdUser.disconnect();
+        return {"status":"unsuccess","msg":"","error":"Group details not found."};
     }
     catch (error)
     {
@@ -292,7 +290,7 @@ export let groups=(request,response)=>{
         let data=request.body.data;
         data=eval('('+data+")");
 
-        if(data.action=="getUsers")
+        if(data.action=="createNewGroup")
         {
             const token=request.headers.authorization.replace("Bearer ","");
             const result=encrypt.verifyToken(token);
@@ -302,14 +300,8 @@ export let groups=(request,response)=>{
                     response.json(result);
                     return;
                 }
-                let validateWord=new profanity.Profanity();
-                if(validateWord.exists(data.data.msg))
-                {
-                    let wordsFilter=new badwords();
-                    let msg=wordsFilter.clean(data.data.msg);
-                    response.json({"status":"unsuccess","msg":"","error":"Your message contains abusive words ("+msg+") remove it and send it again."});
-                }
-                let resp=chatObj.getUserList(data.data,result.msg);
+                
+                let resp=groupObj.createNewGroup(data.data,result.msg);
                 
                 resp.then((result)=>{
                     response.json(result);
@@ -319,7 +311,7 @@ export let groups=(request,response)=>{
                 });
             });
         }
-        if(data.action=="getUserMessage")
+        else if(data.action=="getUserMessage")
         {
             const token=request.headers.authorization.replace("Bearer ","");
             const result=encrypt.verifyToken(token);
@@ -329,7 +321,7 @@ export let groups=(request,response)=>{
                     response.json(result);
                     return;
                 }
-                let resp=chatObj.getUserMessage(result.msg);
+                let resp=groupObj.getUserMessage(result.msg);
                 
                 resp.then((result)=>{
                     response.json(result);
@@ -338,6 +330,90 @@ export let groups=(request,response)=>{
                     response.json({"status":"unsuccess","msg":"","error":error});
                 });
             });
+        }
+        else if(data.action=="joinGroup")
+        {
+            const token=request.headers.authorization.replace("Bearer ","");
+            const result=encrypt.verifyToken(token);
+            result.then((result)=>{
+                if(result.status=="unsuccess")
+                {
+                    response.json(result);
+                    return;
+                }
+                let resp=groupObj.joinGroup(data.data,result.msg);
+                
+                resp.then((result)=>{
+                    response.json(result);
+                });
+                resp.catch((error)=>{
+                    response.json({"status":"unsuccess","msg":"","error":error});
+                });
+            });
+        }
+        else if(data.action=="leaveGroup")
+        {
+            const token=request.headers.authorization.replace("Bearer ","");
+            const result=encrypt.verifyToken(token);
+            result.then((result)=>{
+                if(result.status=="unsuccess")
+                {
+                    response.json(result);
+                    return;
+                }
+                let resp=groupObj.leaveGroup(data.data,result.msg);
+                
+                resp.then((result)=>{
+                    response.json(result);
+                });
+                resp.catch((error)=>{
+                    response.json({"status":"unsuccess","msg":"","error":error});
+                });
+            });
+        }
+        else if(data.action=="getGroupByName")
+        {
+            const token=request.headers.authorization.replace("Bearer ","");
+            const result=encrypt.verifyToken(token);
+            result.then((result)=>{
+                if(result.status=="unsuccess")
+                {
+                    response.json(result);
+                    return;
+                }
+                let resp=groupObj.getChannelByName(data.data,result.msg);
+                
+                resp.then((result)=>{
+                    response.json(result);
+                });
+                resp.catch((error)=>{
+                    response.json({"status":"unsuccess","msg":"","error":error});
+                });
+            });
+        }
+        else if(data.action=="getAllGroups")
+        {
+            const token=request.headers.authorization.replace("Bearer ","");
+            const result=encrypt.verifyToken(token);
+            result.then((result)=>{
+                if(result.status=="unsuccess")
+                {
+                    response.json(result);
+                    return;
+                }
+                let resp=groupObj.getAllOpenGroupDetails(result.msg);
+                
+                resp.then((result)=>{
+                    response.json(result);
+                });
+                resp.catch((error)=>{
+                    response.json({"status":"unsuccess","msg":"","error":error});
+                });
+            });
+        }
+        else
+        {
+            response.json({"status":"unsuccess","msg":"","error":data.action+" is not present."});
         }
         // response.json({"status":"success","msg":"User details accessed","error":''});
     } catch (error) {

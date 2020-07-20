@@ -64,7 +64,7 @@ channelObj.addChannel=(data)=>{
                     });
 
                     let updateResult=await channelDBModel.updateOne({"username":data.username},{$set:{"channels":channelsObj}});
-                    console.log(updateResult);
+                    
                 }
                 return {"status":"success","msg":"Channel added successfully.","error":""};
             }
@@ -98,12 +98,14 @@ channelObj.getUserChannels=(data)=>{
     }
 }
 channelObj.getUserChannel=(data)=>{
-    let channelData=channelDBModel.find({"username":data.username});
-    return channelData.then((result)=>{
-        try
-        {
-            if(result.length==0)
-                return {"status":"unsuccess","msg":"","error":"No channel found."};
+    try
+    {
+        let channelData=channelDBModel.find({"username":data.username});
+        return channelData.then((result)=>{
+            try
+            {
+                if(result.length==0)
+                    return {"status":"unsuccess","msg":"","error":"No channel found."};
                 for(let i=0;i<result[0].channels.length;i++)
                 {
                     let channel=result[0].channels[i];
@@ -114,11 +116,47 @@ channelObj.getUserChannel=(data)=>{
                     
                 }
                 return {"status":"unsuccess","msg":"","error":"Channel not found."};    
-        }
-        catch (error)
-        {
-            return {"status":"unsuccess","msg":"","error":"Problem in fetching channel details."};
-        }
-    });
+            }
+            catch (error)
+            {
+                console.log("Exception in channelObj.getUserChannel inside function"+error);
+                return {"status":"unsuccess","msg":"","error":"Problem in fetching channel details."};
+            }
+        });
+    } catch (error) {
+        console.log("Exception in channelObj.getUserChannel function"+error);
+        return {"status":"unsuccess","msg":"","error":"Problem in fetching channel details."};
+    }
+}
+channelObj.removeChannel=(data)=>{
+    try 
+    {
+        let channelData=channelDBModel.find({"username":data.username});
+        return channelData.then(async (result)=>{
+            try 
+            {
+                if(result.length==0)
+                    return {"status":"unsuccess","msg":"","error":"No channel found."};
+                
+                let channelObj=result[0].channels;
+
+                let channels=[];
+                for(let i=0;i<channelObj.length;i++)
+                {
+                    if(channelObj[i].isOpen && channelObj[i].channelUrl==data.channelUrl)
+                        continue;
+                    channels.push(channelObj);
+                }
+                let updateResult=await channelDBModel.updateOne({"username":data.username},{$set:{"channels":channels}});
+
+                return {"status":"success","msg":"Group leaved successfully.","error":""};
+            } catch (error) {
+                return {"status":"unsuccess","msg":"","error":"Problem in fetching channels."};
+            }
+        })    
+    } catch (error) {
+        // console.log(error);
+        return {"status":"unsuccess","msg":"","error":"Problem in fetching channels."};
+    }
 }
 export let channeldb=channelObj;

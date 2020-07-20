@@ -8,6 +8,12 @@ import {dateTime} from "../../config/date.mjs";
 
 let chatObj={};
 
+/**
+ * chatObj.getUserList
+ * It returns all users list in chat system.
+ * @param data  It is filter paramter.
+ * @param tokenData It is decoded api key object.
+ */
 chatObj.getUserList=async(data,tokenData)=>{
     try 
     {
@@ -35,6 +41,12 @@ chatObj.getUserList=async(data,tokenData)=>{
         return {"status":"unsuccess","msg":"","error":"Problem in fetching user list"};
     }
 }
+/**
+ * chatObj.sendUserMessage
+ * This function is used send message on one to one communication.
+ * @param data It object which consists of message and receiver of message.
+ * @param tokenData It is decoded api key object.
+ */
 chatObj.sendUserMessage=async(data,tokenData)=>
 {
     try
@@ -109,12 +121,8 @@ chatObj.sendUserMessage=async(data,tokenData)=>
 
         let messageResult=await channelDetails.sendUserMessage(data.message,(message,error)=>{
             if(error)
-                console.log(error)
-            else
-                console.log(message);
+                console.log(error);
         });
-
-        console.log(messageResult);
         sendBirdUser.disconnect();
 
         return {"status":"success","msg":"Message sent successfully.","error":""};
@@ -125,6 +133,11 @@ chatObj.sendUserMessage=async(data,tokenData)=>
         return {"status":"unsuccess","msg":"","error":"Problem in sending message."};
     }
 }
+/**
+ * chatObj.getUserMessage
+ * It returns one to one communication messages of specific user.
+ * @param tokenData It is decoded api key object.
+ */
 chatObj.getUserMessage=async(tokenData)=>{
     try
     {
@@ -188,9 +201,14 @@ chatObj.getUserMessage=async(tokenData)=>{
         return {"status":"unsuccess","msg":"","error":"Problem in sending message."};
     }
 }
-chatObj.getChannelByName=async(data,tokenData)=>
-{
-    try
+/**
+ * chatObj.sendGroupMessage
+ * This is function is used to send a message to specific group.
+ * @param data it contains group name and message details
+ * @param tokenData 
+ */
+chatObj.sendGroupMessage=async(data,tokenData)=>{
+    try 
     {
         let userDetails=await userdb.getUserByToken(tokenData);
         if(userDetails.status=="unsuccess")
@@ -198,42 +216,38 @@ chatObj.getChannelByName=async(data,tokenData)=>
         
         userDetails=userDetails.msg;
 
+        let channelObj=await channeldb.getUserChannel({
+            "username":userDetails[0].login.username,
+            "isOpen":true,
+            "name":data.user
+        });
+
+        if(channelObj.status=="unsuccess")
+            return {"status":"unsuccess","msg":"","error":"You are not user of this group. Please first join to group."};
+        
         let sendBirdUser=new SendBirdAction();
         
         await sendBirdUser.connect(userDetails[0].user.email,userDetails[0].user.name);
+
+        let channelDetails=await sendBirdUser.getChannel(channelObj.msg.channelUrl,true);
+
+        let messageResult=await channelDetails.sendUserMessage(data.message,(message,error)=>{
+            if(error)
+                console.log(error);
+        });
         
-        let openChannelDetails=await sendBirdUser.getOpenChannelList();
-
-        let channelObj={};
-        let channelFlag=false;
-        console.log("User given name"+data.user);
-        for(let i=0;i<openChannelDetails.length;i++)
-        {
-            channelObj=openChannelDetails[i];
-            
-            // groupMessages.push({"channelUrl":channelObj.url,"group_name":c,"group_created_on":dateTime.convert(channelObj.createdAt),"group_messages":grpMsg,"members":paticipantObj});
-
-            console.log("Channel Name:"+channelObj.name);
-            if(channelObj.name==data.user)
-            {
-                channelFlag=true;
-                break;
-            }
-
-        }
         sendBirdUser.disconnect();
 
-        if(channelFlag)
-            return {"status":"success","msg":channelObj,"error":""};
-        else
-            return {"status":"unsuccess","msg":"","error":"Group details not found."};
-    }
-    catch (error)
-    {
-        console.log(error);
-        return {"status":"unsuccess","msg":"","error":"Problem in fetching group details."};
+        return {"status":"success","msg":"Message sent successfully.","error":""};
+    } catch (error) {
+        
     }
 }
+/**
+ * chatObj.getGroupMessage
+ * It returns all group messages of particular user.
+ * @param tokenData This decode api key object.
+ */
 chatObj.getGroupMessage=async(tokenData)=>{
     try
     {
@@ -346,26 +360,6 @@ export let chat=(request,response)=>{
                     return;
                 }
                 let resp=chatObj.getUserMessage(result.msg);
-                
-                resp.then((result)=>{
-                    response.json(result);
-                });
-                resp.catch((error)=>{
-                    response.json({"status":"unsuccess","msg":"","error":error});
-                });
-            });
-        }
-        else if(data.action=="getGroupByName")
-        {
-            const token=request.headers.authorization.replace("Bearer ","");
-            const result=encrypt.verifyToken(token);
-            result.then((result)=>{
-                if(result.status=="unsuccess")
-                {
-                    response.json(result);
-                    return;
-                }
-                let resp=chatObj.getChannelByName(data.data,result.msg);
                 
                 resp.then((result)=>{
                     response.json(result);
