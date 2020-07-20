@@ -93,7 +93,7 @@ export let user=(request,response)=>{
         //     data=request.data
         // else
         //     data=request.body.data
-        // console.log(request.body.data);
+        console.log(typeof data);
         data=eval('('+data+")");
 
         if(data.action=="userRegister")
@@ -152,7 +152,7 @@ export let user=(request,response)=>{
         }
         // response.json({"status":"success","msg":"User details accessed","error":''});
     } catch (error) {
-        console.log(error);
-        response.json({"status":"unsuccess","msg":"","error":error});
+        // console.log(error);
+        response.json({"status":"unsuccess","msg":"","error":""+error});
     }
 }

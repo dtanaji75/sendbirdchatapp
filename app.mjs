@@ -50,13 +50,13 @@ for(let i=0;i<router.length;i++)
     route[router[i].model_name]=router[i].model;
     app.get("/"+router[i].model_name,urlEncodedParser,(request,response)=>{
         let pathname=url.parse(request.url).pathname.toString().split("/")[1];
-        console.log("request for "+url.parse(request.url).pathname.toString());
+        // console.log("request for "+url.parse(request.url).pathname.toString());
         route[pathname](request,response);
     });
     app.post("/"+router[i].model_name,urlEncodedParser,(request,response)=>{
         
         let pathname=url.parse(request.url).pathname.toString().split("/")[1];
-        console.log("request for "+url.parse(request.url).pathname.toString());
+        // console.log("request for "+url.parse(request.url).pathname.toString());
         route[pathname](request,response);
     });
 }
