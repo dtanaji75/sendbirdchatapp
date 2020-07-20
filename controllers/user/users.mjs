@@ -150,7 +150,10 @@ export let user=(request,response)=>{
                 });
             }
         }
-        // response.json({"status":"success","msg":"User details accessed","error":''});
+        else
+        {
+             response.json({"status":"unsuccess","msg":"","error":data.action+" is not present."});
+        }
     } catch (error) {
         // console.log(error);
         response.json({"status":"unsuccess","msg":"","error":""+error});
