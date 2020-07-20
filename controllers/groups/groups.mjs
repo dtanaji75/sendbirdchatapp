@@ -311,26 +311,6 @@ export let groups=(request,response)=>{
                 });
             });
         }
-        else if(data.action=="getUserMessage")
-        {
-            const token=request.headers.authorization.replace("Bearer ","");
-            const result=encrypt.verifyToken(token);
-            result.then((result)=>{
-                if(result.status=="unsuccess")
-                {
-                    response.json(result);
-                    return;
-                }
-                let resp=groupObj.getUserMessage(result.msg);
-                
-                resp.then((result)=>{
-                    response.json(result);
-                });
-                resp.catch((error)=>{
-                    response.json({"status":"unsuccess","msg":"","error":error});
-                });
-            });
-        }
         else if(data.action=="joinGroup")
         {
             const token=request.headers.authorization.replace("Bearer ","");
