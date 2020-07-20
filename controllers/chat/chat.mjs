@@ -262,13 +262,7 @@ export let chat=(request,response)=>{
                     response.json(result);
                     return;
                 }
-                let validateWord=new profanity.Profanity();
-                if(validateWord.exists(data.data.msg))
-                {
-                    let wordsFilter=new badwords();
-                    let msg=wordsFilter.clean(data.data.msg);
-                    response.json({"status":"unsuccess","msg":"","error":"Your message contains abusive words ("+msg+") remove it and send it again."});
-                }
+                
                 let resp=chatObj.getUserList(data.data,result.msg);
                 
                 resp.then((result)=>{
@@ -331,6 +325,16 @@ export let chat=(request,response)=>{
                     response.json(result);
                     return;
                 }
+
+                let validateWord=new profanity.Profanity();
+                if(validateWord.exists(data.data.msg))
+                {
+                    let wordsFilter=new badwords();
+                    let msg=wordsFilter.clean(data.data.msg);
+                    response.json({"status":"unsuccess","msg":"","error":"Your message contains abusive words ("+msg+") remove it and send it again."});
+                    return;
+                }
+                
                 let resp=chatObj.sendUserMessage(data.data,result.msg);
                 
                 resp.then((result)=>{
