@@ -7,7 +7,7 @@ import http from "http";
 import {chatObj} from "./controllers/chat/chat.mjs";
 import {encrypt} from "./helper/encryptdecrypt.mjs";
 import {validate} from "./validators/validator.mjs";
-
+import cors from "cors";
 
 const port =process.env.PORT||8888;
 
@@ -15,12 +15,13 @@ const route={};
 
 const app=express();
 
-app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "*");
-    res.header("Access-Control-Allow-Methods", "*");
-    next();
-  });
+// app.use(function(req, res, next) {
+//     res.header("Access-Control-Allow-Origin", "*");
+//     res.header("Access-Control-Allow-Headers", "*");
+//     res.header("Access-Control-Allow-Methods", "*");
+//     next();
+//   });
+app.use(cors);
   
 const urlEncodedParser=bodyParser.urlencoded({limit:'5mb',extended:false});
 // const urlEncodedParser = bodyParser.json({limit:'5mb'});
