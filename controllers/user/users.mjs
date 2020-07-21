@@ -170,13 +170,7 @@ export let user=(request,response)=>{
     try 
     {
         let data=request.body;
-        // if(request.method=="GET")
-        //     data=request.data
-        // else
-        //     data=request.body.data
-        console.log(data);
         
-
         if(data.action=="userRegister")
         {
             let resp=userController.registerUser(data.data);

@@ -54,11 +54,9 @@ groupObj.joinGroup=async(data,tokenData)=>{
         
         userDetails=userDetails.msg;
 
-        let sendBirdUser=new SendBirdAction();
-        
-        await sendBirdUser.connect(userDetails[0].login.username,userDetails[0].user.name);
-
         let channelDetails=await groupObj.getChannelByName(data,tokenData);
+        
+        let sendBirdUser=new SendBirdAction();
 
         if(channelDetails.status=="unsuccess")
             return channelDetails;
@@ -68,17 +66,25 @@ groupObj.joinGroup=async(data,tokenData)=>{
         let channelData={
             name:channelDetails.name,
             isOpen:true,
-            channelUrl:channelDetails.url,
+            channelUrl:channelDetails.channelUrl,
             user:userDetails[0].login.username,
             username:userDetails[0].login.username
         }
 
-        let addChannel=await channeldb.addChannel(channelData);
+        let channelObj=await channeldb.getUserChannel(channelData);
 
-        if(addChannel.status=="unsuccess")
-            return addChannel;
+        if(channelObj.status=="unsuccess")
+        {
+            let addChannel=await channeldb.addChannel(channelData);
+            
+            if(addChannel.status=="unsuccess")
+                return addChannel;
+        }
 
-        channelData=await sendBirdUser.getChannel(channelDetails.url,true);
+        
+        await sendBirdUser.connect(userDetails[0].login.username,userDetails[0].user.name);
+        
+        channelData=await sendBirdUser.getChannel(channelDetails.channelUrl,true);
 
         await channelData.enter((response,error)=>{
             if(error)
@@ -92,7 +98,7 @@ groupObj.joinGroup=async(data,tokenData)=>{
     catch (error)
     {
         console.log(error);
-        return {"status":"unsuccess","msg":"","error":"Problem in fetching joined groups."};
+        return {"status":"unsuccess","msg":"","error":"Problem in joining a group."};
     }
 }
 groupObj.leaveGroup=async(data,tokenData)=>{
@@ -110,6 +116,8 @@ groupObj.leaveGroup=async(data,tokenData)=>{
 
         let channelDetails=await groupObj.getChannelByName(data,tokenData);
 
+        console.log(channelDetails);
+
         if(channelDetails.status=="unsuccess")
             return channelDetails;
         
@@ -120,7 +128,7 @@ groupObj.leaveGroup=async(data,tokenData)=>{
             username:userDetails[0].login.username
         }
 
-        let removeChannel=await channeldb.addChannel(channelData);
+        let removeChannel=await channeldb.removeChannel(channelData);
 
         if(removeChannel.status=="unsuccess")
             return addChannel;
@@ -139,34 +147,7 @@ groupObj.leaveGroup=async(data,tokenData)=>{
     catch (error)
     {
         console.log(error);
-        return {"status":"unsuccess","msg":"","error":"Problem in fetching joined groups."};
-    }
-}
-groupObj.getUserList=async(data,tokenData)=>{
-    try 
-    {
-        let userData={
-            user_type:"admin",
-            username:tokenData.username
-        }
-        if(data.name!="")
-            userData.name=data.name;
-        if(data.status!="")
-            userData.status=data.status;
-        if(data.email!="")
-            userData.email=data.email;
-        if(data.contactno!="")
-            userData.contactno=data.contactno;
-        if(data.location!="" && tokenData.user_type=="stall")
-            userData.location=data.location;
-        if(data.stallname!="" && tokenData.user_type=="stall")
-            userData.stallname=data.stallname;
-            
-        let response = await userdb.getUserDetails(userData);
-        return response;
-    } catch (error) {
-        console.log(error);
-        return {"status":"unsuccess","msg":"","error":"Problem in fetching user list"};
+        return {"status":"unsuccess","msg":"","error":"Problem in leaving group."};
     }
 }
 groupObj.getAllOpenGroupDetails=async(tokenData)=>{
@@ -189,25 +170,14 @@ groupObj.getAllOpenGroupDetails=async(tokenData)=>{
         {
             let channelObj=openChannelDetails[i];
 
-            let paticipantObj=await sendBirdUser.getParticipantList(channelObj.url);
+            let participantObj=await channeldb.getParticipants({"channelUrl":channelObj.url});
             
-            let userMsg=await sendBirdUser.getMessageList(channelObj,true);
+            if(participantObj.status=="unsuccess")
+                participantObj=[];
+            else
+                participantObj=participantObj.msg;
             
-            let grpMsg=[];
-            for(let j=0;j<userMsg.length;j++)
-            { 
-                
-                let message={
-                    "messageId":userMsg[j].messageId,
-                    "message":userMsg[j].message,
-                    "message_date_time":dateTime.convert(userMsg[j].createdAt),
-                    "sender_id":userMsg[j]._sender.userId,
-                    "sender_name":userMsg[j]._sender.nickname,
-                    "send_status":userMsg[j].sendingStatus
-                }
-                grpMsg.push(message);
-            }
-            groupMessages.push({"channelUrl":channelObj.url,"group_name":channelObj.name,"group_created_on":dateTime.convert(channelObj.createdAt),"group_messages":grpMsg,"members":paticipantObj});
+            groupMessages.push({"channelUrl":channelObj.url,"group_name":channelObj.name,"group_created_on":dateTime.convert(channelObj.createdAt),"members":paticipantObj});
         }
 
         sendBirdUser.disconnect();
@@ -250,31 +220,18 @@ groupObj.getChannelByName=async(data,tokenData)=>
             }
 
         }
+        sendBirdUser.disconnect();
         if(channelFlag)
         {
-            let paticipantObj=await sendBirdUser.getParticipantList(channelObj.url);
+            let participantObj=await channeldb.getParticipants({"channelUrl":channelObj.url});
             
-            let userMsg=await sendBirdUser.getMessageList(channelObj,true);
+            if(participantObj.status=="unsuccess")
+                participantObj=[];
+            else
+                participantObj=participantObj.msg;
             
-            let grpMsg=[];
-            for(let j=0;j<userMsg.length;j++)
-            { 
-                
-                let message={
-                    "messageId":userMsg[j].messageId,
-                    "message":userMsg[j].message,
-                    "message_date_time":dateTime.convert(userMsg[j].createdAt),
-                    "sender_id":userMsg[j]._sender.userId,
-                    "sender_name":userMsg[j]._sender.nickname,
-                    "send_status":userMsg[j].sendingStatus
-                }
-                grpMsg.push(message);
-            }
-
-            sendBirdUser.disconnect();
-            return {"status":"success","msg":{"channelUrl":channelObj.url,"group_name":channelObj.name,"group_created_on":dateTime.convert(channelObj.createdAt),"group_messages":grpMsg,"members":paticipantObj},"error":""};
-        }   
-        sendBirdUser.disconnect();
+            return {"status":"success","msg":{"channelUrl":channelObj.url,"group_name":channelObj.name,"group_created_on":dateTime.convert(channelObj.createdAt),"members":participantObj},"error":""};
+        }
         return {"status":"unsuccess","msg":"","error":"Group details not found."};
     }
     catch (error)

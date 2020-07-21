@@ -50,7 +50,7 @@ channelObj.addChannel=(data)=>{
 
                     for(let i=0;i<channelsObj.length;i++)
                     {
-                        if(channelsObj[i].isOpen==data.isOpen && data.name==channelsObj[i].name && channelsObj[i].isOpen==true)
+                        if(channelsObj[i].isOpen==data.isOpen && data.name==channelsObj[i].name && channelsObj[i].isOpen)
                             return {"status":"unsuccess","msg":"","error":"Channel already created.","channelUrl":channelsObj[i].channelUrl};
                         if(data.user==channelsObj[i].user)
                             return {"status":"unsuccess","msg":"","error":"Channel already created.","channelUrl":channelsObj[i].channelUrl};
@@ -62,6 +62,8 @@ channelObj.addChannel=(data)=>{
                         "channelUrl":data.channelUrl,
                         "user":data.user
                     });
+
+                    console.log(channelsObj);
 
                     let updateResult=await channelDBModel.updateOne({"username":data.username},{$set:{"channels":channelsObj}});
                     
@@ -157,6 +159,37 @@ channelObj.removeChannel=(data)=>{
     } catch (error) {
         // console.log(error);
         return {"status":"unsuccess","msg":"","error":"Problem in fetching channels."};
+    }
+}
+channelObj.getParticipants=(data)=>{
+    try 
+    {
+        let channelData=channelDBModel.find();
+        return channelData.then(async (result)=>{
+            try 
+            {
+                if(result.length==0)
+                    return {"status":"unsuccess","msg":"","error":"No channel found."};
+                
+                let channels=[];
+                for(let i=0;i<result.length;i++)
+                {
+                    let channelObj=result[0].channels;
+                    for(let j=0;j<channelObj.length;j++)
+                    {
+                        if(channelObj[j].isOpen && channelObj[j].channelUrl==data.channelUrl)
+                            channels.push(result[i].username);
+                    }
+                }
+                if(channels.length==0)
+                    return {"status":"unsuccess","error":"No participants available","msg":""}
+                return {"status":"success","msg":channels,"error":""};
+            } catch (error) {
+                return {"status":"unsuccess","msg":"","error":"Problem in fetching channels."};
+            }
+        })        
+    } catch (error) {
+        return {"status":"unsuccess","msg":"","error":"Problem in fetching participants."};
     }
 }
 export let channeldb=channelObj;
