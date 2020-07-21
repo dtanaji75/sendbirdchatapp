@@ -84,8 +84,10 @@ for(let i=0;i<router.length;i++)
 
 io.on("connection",(socket)=>{
     console.log("user connected");
-    console.log(socket.request.address);
+    // console.log(socket.request.address);
     socket.on('sendMessage', async(data,token) => {
+        console.log("send message request called");
+        console.log(data);
         const result=await encrypt.verifyToken(token);
         if(result.status=="unsuccess")
         {
