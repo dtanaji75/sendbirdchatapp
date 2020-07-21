@@ -22,11 +22,12 @@ app.use(function(req, res, next) {
     next();
   });
   
-const urlEncodedParser=bodyParser.urlencoded({limit:'5mb',extended:false});
-// const urlEncodedParser = bodyParser.json({limit:'5mb'});
+// const urlEncodedParser=bodyParser.urlencoded({limit:'5mb',extended:false});
+const urlEncodedParser = bodyParser.json({limit:'5mb'});
 
 let server=http.createServer(app);
 const io=socket(server);
+io.origins("*:*");
 
 app.get("/",(request,response)=>{
     try
