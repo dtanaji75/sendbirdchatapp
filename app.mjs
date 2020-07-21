@@ -6,6 +6,7 @@ import socket from "socket.io";
 import http from "http";
 import {chatObj} from "./controllers/chat/chat.mjs";
 import {encrypt} from "./helper/encryptdecrypt.mjs";
+import {validate} from "./validators/validator.mjs";
 
 
 const port =process.env.PORT||8888;
@@ -17,6 +18,7 @@ const app=express();
 app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "*");
+    res.header("Access-Control-Allow-Methods", "*");
     next();
   });
   
@@ -50,14 +52,30 @@ for(let i=0;i<router.length;i++)
 {
     route[router[i].model_name]=router[i].model;
     app.get("/"+router[i].model_name,urlEncodedParser,(request,response)=>{
+        
         let pathname=url.parse(request.url).pathname.toString().split("/")[1];
-        // console.log("request for "+url.parse(request.url).pathname.toString());
+        
+        let validateObj=validate.validateMainObject(request.body);
+
+        if(validateObj.length>0)
+        {
+            response.json({"status":"unsuccess","msg":"","error":validateObj});
+            return;
+        }
         route[pathname](request,response);
     });
     app.post("/"+router[i].model_name,urlEncodedParser,(request,response)=>{
         
         let pathname=url.parse(request.url).pathname.toString().split("/")[1];
-        // console.log("request for "+url.parse(request.url).pathname.toString());
+        
+        let validateObj=validate.validateMainObject(request.body);
+
+        if(validateObj.length>0)
+        {
+            response.json({"status":"unsuccess","msg":"","error":validateObj});
+            return;
+        }
+        
         route[pathname](request,response);
     });
 }

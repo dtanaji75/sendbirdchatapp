@@ -276,7 +276,12 @@ chatObj.getGroupMessage=async(tokenData)=>{
             
             let channelObj=sendBirdUser.getChannel(openChannelDetails[i].channelUrl);
 
-            let paticipantObj=await sendBirdUser.getParticipantList(channelObj.url);
+            let participantObj=await channeldb.getParticipants({"channelUrl":channelObj.url});
+            
+            if(participantObj.status=="unsuccess")
+                participantObj=[];
+            else
+                participantObj=participantObj.msg;
             
             let userMsg=await sendBirdUser.getMessageList(channelObj,true);
             

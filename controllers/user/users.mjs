@@ -2,6 +2,7 @@
 import {userdb} from "../../models/user_model.mjs";
 import {SendBirdAction} from "../../config/sendbirdAction.mjs";
 import {encrypt} from "../../helper/encryptdecrypt.mjs";
+import {userValidator} from "../../validators/user_validator.mjs";
 
 let userController={};
 
@@ -159,7 +160,7 @@ userController.getBlockedUserList=async(tokenData)=>{
         return {"status":"unsuccess","msg":"","error":"Problem in fetching blocked users."};
     }
 }
-userController.logOut=async(data,tokenData)=>{
+userController.logOut=async(tokenData)=>{
     try {
         
     } catch (error) {
@@ -170,9 +171,17 @@ export let user=(request,response)=>{
     try 
     {
         let data=request.body;
+
         
         if(data.action=="userRegister")
         {
+            let registerValidate=userValidator.validateRegister(data.data);
+
+            if(registerValidate.length>0)
+            {
+                response.json({"status":"unsuccess","msg":"","error":registerValidate});
+                return;
+            };
             let resp=userController.registerUser(data.data);
 
             resp.then((result)=>{
@@ -180,10 +189,17 @@ export let user=(request,response)=>{
             });
             resp.catch((error)=>{
                 response.json({"status":"unsuccess","msg":"","error":error});
-            })
+            });
         }
         else if(data.action=="userlogin")
         {
+            let loginValidate=userValidator.validateLogin(data.data);
+
+            if(loginValidate.length>0)
+            {
+                response.json({"status":"unsuccess","msg":"","error":loginValidate});
+                return;
+            };
             let resp=userController.userLogin(data.data);
 
             resp.then((result)=>{
@@ -215,6 +231,150 @@ export let user=(request,response)=>{
                     }
                     
                     let resp=userController.userProfile(data.data,result.msg);
+                    
+                    resp.then((result)=>{
+                        response.json(result);
+                    });
+                    resp.catch((error)=>{
+                        response.json({"status":"unsuccess","msg":"","error":error});
+                    });
+                });
+            }
+        }
+        else if(data.action=="blockUser")
+        {
+            let blockUserValidate=userValidator.validateBlockUser(data.data);
+
+            if(blockUserValidate.length>0)
+            {
+                response.json({"status":"unsuccess","msg":"","error":blockUserValidate});
+                return;
+            }
+            else if(!request.headers.hasOwnProperty("authorization"))
+            {
+                response.json({"status":"unsuccess","msg":"","error":"Api-key is missing"});
+            }
+            else if(request.headers.authorization=="")
+            {
+                response.json({"status":"unsuccess","msg":"","error":"Api-key cannot be empty."});
+            }
+            else
+            {
+
+                const token=request.headers.authorization.replace("Bearer ","");
+                const result=encrypt.verifyToken(token);
+                result.then((result)=>{
+                    if(result.status=="unsuccess")
+                    {
+                        response.json(result);
+                        return;
+                    }
+                    
+                    let resp=userController.blockUser(data.data,result.msg);
+                    
+                    resp.then((result)=>{
+                        response.json(result);
+                    });
+                    resp.catch((error)=>{
+                        response.json({"status":"unsuccess","msg":"","error":error});
+                    });
+                });
+            }
+        }
+        else if(data.action=="unBlockUser")
+        {
+            let unBlockUserValidate=userValidator.validateUnblockUser(data.data);
+
+            if(unBlockUserValidate.length>0)
+            {
+                response.json({"status":"unsuccess","msg":"","error":unBlockUserValidate});
+                return;
+            }
+            else if(!request.headers.hasOwnProperty("authorization"))
+            {
+                response.json({"status":"unsuccess","msg":"","error":"Api-key is missing"});
+            }
+            else if(request.headers.authorization=="")
+            {
+                response.json({"status":"unsuccess","msg":"","error":"Api-key cannot be empty."});
+            }
+            else
+            {
+
+                const token=request.headers.authorization.replace("Bearer ","");
+                const result=encrypt.verifyToken(token);
+                result.then((result)=>{
+                    if(result.status=="unsuccess")
+                    {
+                        response.json(result);
+                        return;
+                    }
+                    
+                    let resp=userController.unBlockUser(data.data,result.msg);
+                    
+                    resp.then((result)=>{
+                        response.json(result);
+                    });
+                    resp.catch((error)=>{
+                        response.json({"status":"unsuccess","msg":"","error":error});
+                    });
+                });
+            }
+        }
+        else if(data.action=="logout")
+        {
+            if(!request.headers.hasOwnProperty("authorization"))
+            {
+                response.json({"status":"unsuccess","msg":"","error":"Api-key is missing"});
+            }
+            else if(request.headers.authorization=="")
+            {
+                response.json({"status":"unsuccess","msg":"","error":"Api-key cannot be empty."});
+            }
+            else
+            {
+                const token=request.headers.authorization.replace("Bearer ","");
+                const result=encrypt.verifyToken(token);
+                result.then((result)=>{
+                    if(result.status=="unsuccess")
+                    {
+                        response.json(result);
+                        return;
+                    }
+                    
+                    let resp=userController.logOut(result.msg);
+                    
+                    resp.then((result)=>{
+                        response.json(result);
+                    });
+                    resp.catch((error)=>{
+                        response.json({"status":"unsuccess","msg":"","error":error});
+                    });
+                });
+            }
+        }
+        else if(data.action=="blockUsersList")
+        {
+            if(!request.headers.hasOwnProperty("authorization"))
+            {
+                response.json({"status":"unsuccess","msg":"","error":"Api-key is missing"});
+            }
+            else if(request.headers.authorization=="")
+            {
+                response.json({"status":"unsuccess","msg":"","error":"Api-key cannot be empty."});
+            }
+            else
+            {
+                const token=request.headers.authorization.replace("Bearer ","");
+                const result=encrypt.verifyToken(token);
+                result.then((result)=>{
+                    if(result.status=="unsuccess")
+                    {
+                        response.json(result);
+                        return;
+                    }
+                    
+                    let resp=userController.getBlockedUserList(result.msg);
                     
                     resp.then((result)=>{
                         response.json(result);

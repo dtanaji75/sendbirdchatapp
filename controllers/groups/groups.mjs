@@ -90,6 +90,7 @@ groupObj.joinGroup=async(data,tokenData)=>{
             if(error)
                 throw new Error(error);
         });
+        await channelData.sendUserMessage("hi",(response,error)=>{})
 
         sendBirdUser.disconnect();
         
@@ -352,7 +353,9 @@ export let groups=(request,response)=>{
             response.json({"status":"unsuccess","msg":"","error":data.action+" is not present."});
         }
         // response.json({"status":"success","msg":"User details accessed","error":''});
-    } catch (error) {
+    }
+    catch (error)
+    {
         console.log(error);
         response.json({"status":"unsuccess","msg":"","error":error});
     }
