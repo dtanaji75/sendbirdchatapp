@@ -17,8 +17,11 @@ const app=express();
 
 app.use(cors);
   
-// const urlEncodedParser=bodyParser.urlencoded({limit:'5mb',extended:false});
-const urlEncodedParser = bodyParser.json({limit:'5mb'});
+const urlEncodedParser=bodyParser.urlencoded({limit:'50mb',extended:false});
+const jsonEncodedParser = bodyParser.json({limit:'50mb'});
+
+app.use(urlEncodedParser);
+app.use(jsonEncodedParser);
 
 let server=http.createServer(app);
 const io=socket(server);
@@ -47,7 +50,7 @@ app.post("/",urlEncodedParser,(request,response)=>{
 for(let i=0;i<router.length;i++)
 {
     route[router[i].model_name]=router[i].model;
-    app.get("/"+router[i].model_name,urlEncodedParser,(request,response)=>{
+    app.get("/"+router[i].model_name,(request,response)=>{
         
         let pathname=url.parse(request.url).pathname.toString().split("/")[1];
         
@@ -60,7 +63,7 @@ for(let i=0;i<router.length;i++)
         }
         route[pathname](request,response);
     });
-    app.post("/"+router[i].model_name,urlEncodedParser,(request,response)=>{
+    app.post("/"+router[i].model_name,(request,response)=>{
         
         let pathname=url.parse(request.url).pathname.toString().split("/")[1];
         

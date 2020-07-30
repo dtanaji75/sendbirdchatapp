@@ -5,6 +5,7 @@ import {userdb} from "../../models/user_model.mjs";
 import {channeldb} from "../../models/channels_model.mjs";
 import {encrypt} from "../../helper/encryptdecrypt.mjs";
 import {dateTime} from "../../config/date.mjs";
+import SendBird from 'sendbird';
 
 let chatObj={};
 
@@ -141,13 +142,15 @@ chatObj.sendUserMessage=async(data,tokenData)=>
 chatObj.getUserMessage=async(tokenData)=>{
     try
     {
+		let sendBirdUser=new SendBird({appId:"BD4FC23B-DA19-47EC-9FC3-D9E5AEF926F6"});
+
         let userDetails=await userdb.getUserByToken(tokenData);
         if(userDetails.status=="unsuccess")
             return userDetails;
         
         userDetails=userDetails.msg;
         
-        let sendBirdUser=new SendBirdAction();
+        
         
         await sendBirdUser.connect(userDetails[0].login.username,userDetails[0].user.name);
         let groupChannelDetails=await channeldb.getUserChannels({username:userDetails[0].login.username});
@@ -163,11 +166,13 @@ chatObj.getUserMessage=async(tokenData)=>{
             if(groupChannelDetails[i].isOpen)
                 continue;
 
-            let channelObj=await sendBirdUser.getChannel(groupChannelDetails[i].channelUrl,false);
+            let channelObj=await sendBirdUser.GroupChannel.getChannel(groupChannelDetails[i].channelUrl);
+			
+			let userMsg=await chatObj.fetchMessages(channelObj);
+			
+			let msg=[];
             
-            let userMsg=await sendBirdUser.getMessageList(channelObj,true);
             
-            let msg=[];
             for(let j=0;j<userMsg.length;j++)
             {
                 if(userMsg[j].customType!="" || userMsg[j].messageType=="admin")
@@ -200,6 +205,24 @@ chatObj.getUserMessage=async(tokenData)=>{
         console.log(error);
         return {"status":"unsuccess","msg":"","error":"Problem in sending message."};
     }
+}
+chatObj.fetchMessages=async(channelObj)=>{
+	const prevMessageListQuery = channelObj.createPreviousMessageListQuery();
+	
+	prevMessageListQuery.limit = 50;
+	prevMessageListQuery.reverse = true;
+	prevMessageListQuery.includeMetaArray = true;
+	prevMessageListQuery.includeReaction = true;
+	
+	// let messageList=
+	
+	return new Promise((resolve,reject)=>{
+        if(prevMessageListQuery.hasMore && !prevMessageListQuery.isLoading)
+            prevMessageListQuery.load((messageList,error)=>{
+                error?reject(error):resolve(messageList);
+            })
+    });
+	
 }
 /**
  * chatObj.sendGroupMessage
